@@ -2,7 +2,7 @@ import React from 'react'
 
 export interface FormProps<T> {
   initialValues: T
-  children: (form: FormObject<T>) => React.ReactNode
+  children: (form: FormObject<T>, handlers: Handlers<T>) => React.ReactNode
 }
 
 export interface FormState<T> {
@@ -11,7 +11,14 @@ export interface FormState<T> {
 
 export interface FormValue<T> {
   value: T
-  onChange: (value: T) => any
+}
+
+export interface Handler<T> {
+  handleChange: (value: T) => any
+}
+
+export type Handlers<T> = {
+  [P in keyof T]: Handler<T[P]>
 }
 
 export type FormObject<T> = {
@@ -25,17 +32,36 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
     this.state = {
       values: props.initialValues
     }
+    this.createHandlers(props.initialValues)
+    this.initialValues = props.initialValues
   }
 
+  handlers: Handlers<TValue> = {} as Handlers<TValue>
+  initialValues: TValue
+
   createFormObject = (values: TValue): FormObject<TValue> => {
-    const formObject: any = {}
+    const formObject: FormObject<TValue> = {} as FormObject<TValue>
     Object.keys(values).forEach(k => {
-      formObject[k] = {
+      formObject[k as keyof TValue] = {
         value: values[k as keyof TValue],
-        onChange: (v: any) => this.setState({ values: Object.assign({}, this.state.values, { [k]: v }) })
       }
     })
     return formObject
+  }
+
+  createHandlers = (values: TValue) => {
+    Object.keys(values).forEach(k => {
+      if (!this.handlers[k as keyof TValue]) {
+        this.handlers[k as keyof TValue] = {
+          handleChange: (v: any) => this.onChange(k, v),
+        }
+      }
+    })
+    return this.handlers
+  }
+
+  onChange = (k: string, v: any) => {
+    this.setState({ values: Object.assign({}, this.state.values, { [k]: v }) })
   }
 
   componentDidMount() {
@@ -44,6 +70,6 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
 
   render() {
     const formObject = this.createFormObject(this.state.values)
-    return this.props.children(formObject)
+    return this.props.children(formObject, this.handlers)
   }
 }

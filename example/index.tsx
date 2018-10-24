@@ -16,11 +16,11 @@ class App extends React.PureComponent<{}, {}> {
     return (
       <MyForm initialValues={{ name: '', age: 0, gender: 'female' }}>
       {
-        (formValues) => {
-          console.log(formValues)
+        (form, handlers) => {
+          console.log(form)
           return (
             <div>
-              <input type="text" value={ formValues.name.value } onChange={ e => formValues.name.onChange(e.target.value) } />
+              <input type="text" value={ form.name.value } onChange={ e => handlers.name.handleChange(e.target.value) } />
             </div>
           )
         }
