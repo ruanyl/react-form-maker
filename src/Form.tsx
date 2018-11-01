@@ -7,14 +7,17 @@ export interface FormProps<T> {
 
 export interface FormState<T> {
   values: T
+  touched: string[]
 }
 
 export interface FormValue<T> {
   value: T
+  touched: boolean
 }
 
 export interface Handler<T> {
   handleChange: (value: T) => any
+  handleBlur: () => any
 }
 
 export type Handlers<T> = {
@@ -30,7 +33,8 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
   constructor(props: FormProps<TValue>) {
     super(props)
     this.state = {
-      values: props.initialValues
+      values: props.initialValues,
+      touched: [],
     }
     this.createHandlers(props.initialValues)
     this.initialValues = props.initialValues
@@ -42,8 +46,11 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
   createFormObject = (values: TValue): FormObject<TValue> => {
     const formObject: FormObject<TValue> = {} as FormObject<TValue>
     Object.keys(values).forEach(k => {
-      formObject[k as keyof TValue] = {
-        value: values[k as keyof TValue],
+      const name = k as keyof TValue
+      const value = values[name]
+      formObject[name] = {
+        value,
+        touched: this.state.touched.includes(k),
       }
     })
     return formObject
@@ -51,17 +58,27 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
 
   createHandlers = (values: TValue) => {
     Object.keys(values).forEach(k => {
-      if (!this.handlers[k as keyof TValue]) {
-        this.handlers[k as keyof TValue] = {
-          handleChange: (v: any) => this.onChange(k, v),
+      const name = k as keyof TValue
+      if (!this.handlers[name]) {
+        this.handlers[name] = {
+          handleChange: (v: any) => this.onChange(name, v),
+          handleBlur: () => this.onBlur(name)
         }
       }
     })
     return this.handlers
   }
 
-  onChange = (k: string, v: any) => {
+  onChange = (k: keyof TValue, v: any) => {
     this.setState({ values: Object.assign({}, this.state.values, { [k]: v }) })
+  }
+
+  onBlur = (k: keyof TValue) => {
+    if (!this.state.touched.includes(k as string)) {
+      this.setState({
+        touched: this.state.touched.concat(k as string),
+      })
+    }
   }
 
   componentDidMount() {

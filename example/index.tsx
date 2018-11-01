@@ -20,7 +20,12 @@ class App extends React.PureComponent<{}, {}> {
           console.log(form)
           return (
             <div>
-              <input type="text" value={ form.name.value } onChange={ e => handlers.name.handleChange(e.target.value) } />
+              <input
+              type="text"
+              value={ form.name.value }
+              onChange={ e => handlers.name.handleChange(e.target.value) }
+              onBlur={ handlers.name.handleBlur }
+              />
             </div>
           )
         }
