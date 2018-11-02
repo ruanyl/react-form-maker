@@ -7,12 +7,15 @@ export interface FormProps<T> {
 }
 
 type Validators<T> = {
-  [K in keyof T]?: (v: T[K], values: T) => boolean
+  [K in keyof T]?: (v: T[K], values: T) => boolean | Promise<boolean>
 }
 
 export interface FormState<T> {
   values: T
   touched: string[]
+  validationResults: {
+    [P in keyof T]: boolean | undefined
+  }
 }
 
 export interface FormValue<T> {
@@ -41,6 +44,7 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
     this.state = {
       values: props.initialValues,
       touched: [],
+      validationResults: {} as FormState<TValue>['validationResults'],
     }
     this.createHandlers(props.initialValues)
     this.initialValues = props.initialValues
@@ -55,8 +59,7 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
       const name = k as keyof TValue
       const value = values[name]
       const touched = this.state.touched.includes(k)
-      const validator = this.props.validators[name]
-      const invalid = touched ? validator && !validator(value, values) : undefined
+      const invalid = this.state.validationResults[name] === undefined ? undefined : !this.state.validationResults[name]
       formObject[name] = {
         value,
         touched,
@@ -80,7 +83,20 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
   }
 
   onChange = (k: keyof TValue, v: any) => {
-    this.setState({ values: Object.assign({}, this.state.values, { [k]: v }) })
+    this.setState({
+      values: Object.assign({}, this.state.values, { [k]: v }),
+      touched: !this.state.touched.includes(k as string) ? this.state.touched.concat(k as string) : this.state.touched,
+    })
+    this.validate(k, v)
+  }
+
+  validate = (k: keyof TValue, v: any) => {
+    if (this.props.validators[k]) {
+      const validator = this.props.validators[k];
+      Promise.resolve(validator!(v, this.state.values)).then(valid => {
+        this.setState({ validationResults: Object.assign({}, this.state.validationResults, { [k]: valid }) })
+      })
+    }
   }
 
   onBlur = (k: keyof TValue) => {
@@ -88,6 +104,7 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
       this.setState({
         touched: this.state.touched.concat(k as string),
       })
+      this.validate(k, this.props.initialValues[k])
     }
   }
 
