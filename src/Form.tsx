@@ -7,7 +7,7 @@ export interface FormProps<T> {
 }
 
 type Validators<T> = {
-  [K in keyof T]?: (v: T[K]) => boolean
+  [K in keyof T]?: (v: T[K], values: T) => boolean
 }
 
 export interface FormState<T> {
@@ -56,7 +56,7 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
       const value = values[name]
       const touched = this.state.touched.includes(k)
       const validator = this.props.validators[name]
-      const invalid = touched ? validator && !validator(value) : undefined
+      const invalid = touched ? validator && !validator(value, values) : undefined
       formObject[name] = {
         value,
         touched,
