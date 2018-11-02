@@ -56,7 +56,7 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
       const value = values[name]
       const touched = this.state.touched.includes(k)
       const validator = this.props.validators[name]
-      const invalid = touched ? validator && validator(value) : undefined
+      const invalid = touched ? validator && !validator(value) : undefined
       formObject[name] = {
         value,
         touched,
