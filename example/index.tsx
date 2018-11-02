@@ -14,7 +14,7 @@ class MyForm extends Form<Values> {}
 class App extends React.PureComponent<{}, {}> {
   render() {
     return (
-      <MyForm initialValues={{ name: '', age: 0, gender: 'female' }}>
+      <MyForm initialValues={{ name: '', age: 0, gender: 'female' }} validators={{ name: v => v.length > 0 }}>
       {
         (form, handlers) => {
           console.log(form)

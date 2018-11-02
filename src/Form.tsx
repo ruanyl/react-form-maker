@@ -2,7 +2,12 @@ import React from 'react'
 
 export interface FormProps<T> {
   initialValues: T
+  validators: Validators<T>
   children: (form: FormObject<T>, handlers: Handlers<T>) => React.ReactNode
+}
+
+type Validators<T> = {
+  [K in keyof T]?: (v: T[K]) => boolean
 }
 
 export interface FormState<T> {
@@ -13,6 +18,7 @@ export interface FormState<T> {
 export interface FormValue<T> {
   value: T
   touched: boolean
+  invalid: boolean | undefined
 }
 
 export interface Handler<T> {
@@ -48,9 +54,13 @@ export class Form<TValue = object> extends React.Component<FormProps<TValue>, Fo
     Object.keys(values).forEach(k => {
       const name = k as keyof TValue
       const value = values[name]
+      const touched = this.state.touched.includes(k)
+      const validator = this.props.validators[name]
+      const invalid = touched ? validator && validator(value) : undefined
       formObject[name] = {
         value,
-        touched: this.state.touched.includes(k),
+        touched,
+        invalid,
       }
     })
     return formObject
